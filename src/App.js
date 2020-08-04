@@ -1,24 +1,123 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Post from "./Post";
 import "./App.css";
+import { db, auth } from "./firebase";
+import { makeStyles } from "@material-ui/core/styles";
+import Modal from "@material-ui/core/Modal";
+import { Button, Input } from "@material-ui/core";
+
+function getModalStyle() {
+  const top = 50;
+  const left = 50;
+
+  return {
+    top: `${top}%`,
+    left: `${left}%`,
+    transform: `translate(-${top}%, -${left}%)`,
+  };
+}
+
+const useStyles = makeStyles((theme) => ({
+  paper: {
+    position: "absolute",
+    width: 400,
+    backgroundColor: theme.palette.background.paper,
+    border: "2px solid #000",
+    boxShadow: theme.shadows[5],
+    padding: theme.spacing(2, 4, 3),
+  },
+}));
 
 function App() {
-  const [posts, setPosts] = useState([
-    {
-      username: "Elvo",
-      caption: "Shes working",
-      imageUrl:
-        "https://i.guim.co.uk/img/media/6088d89032f8673c3473567a91157080840a7bb8/413_955_2808_1685/master/2808.jpg?width=1200&height=1200&quality=85&auto=format&fit=crop&s=412cc526a799b2d3fff991129cb8f030",
-    },
-    {
-      username: "Jessica",
-      caption: "Look at my mountain",
-      imageUrl: "https://i.imgur.com/eQbWtC9.jpg",
-    },
-  ]);
+  const classes = useStyles();
+  const [modalStyle] = useState(getModalStyle);
+
+  const [posts, setPosts] = useState([]);
+  const [open, setOpen] = useState(false);
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState("");
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    auth.onAuthStateChanged((authUser) => {
+      if (authUser) {
+        //logged in...
+        console.log(authUser);
+        setUser(authUser);
+
+        if (authUser.displayName) {
+          //dont update username
+        } else {
+          //if we just created one
+          return authUser.updateProfile({
+            displayName: username,
+          });
+        }
+      } else {
+        //logged out
+        setUser(null);
+      }
+    });
+  }, [user, username]);
+
+  useEffect(() => {
+    db.collection("posts").onSnapshot((snapshot) => {
+      //everytime a new post is added, this code fires
+      setPosts(
+        snapshot.docs.map((doc) => ({
+          id: doc.id,
+          post: doc.data(),
+        }))
+      );
+    });
+  }, []);
+
+  const signUp = (event) => {
+    event.preventDefault();
+
+    auth
+      .createUserWithEmailAndPassword(email, password)
+      .catch((error) => alert(error.message));
+  };
 
   return (
     <div className="App">
+      <Modal open={open} onClose={() => setOpen(false)}>
+        <div style={modalStyle} className={classes.paper}>
+          <form className="app__signUp">
+            <center>
+              <img
+                className="app__headerImage"
+                src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/Instagram_logo.svg/1200px-Instagram_logo.svg.png"
+                alt="insta logo"
+              />
+            </center>
+            <Input
+              placeholder="username"
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+            />
+            <Input
+              placeholder="email"
+              type="text"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+            <Input
+              placeholder="password"
+              type="text"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+            <Button type="submit" onClick={signUp}>
+              Sign Up
+            </Button>
+          </form>
+        </div>
+      </Modal>
+
       {/*Heaader*/}
       <div className="app__header">
         <img
@@ -27,10 +126,14 @@ function App() {
           alt="insta logo"
         />
       </div>
+
+      <Button onClick={() => setOpen(true)}>Sign up</Button>
+
       <h1> HEYO</h1>
 
-      {posts.map((post) => (
+      {posts.map(({ id, post }) => (
         <Post
+          key={id}
           username={post.username}
           caption={post.caption}
           imageUrl={post.imageUrl}

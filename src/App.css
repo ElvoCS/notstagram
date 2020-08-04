@@ -16,3 +16,7 @@
   width: 70px;
   padding-left: 10px;
 }
+.app__signUp {
+  display: flex;
+  flex-direction: column;
+}
