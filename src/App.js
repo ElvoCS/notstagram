@@ -34,31 +34,27 @@ function App() {
 
   const [posts, setPosts] = useState([]);
   const [open, setOpen] = useState(false);
+  const [openSignIn, setOpenSignIn] = useState(false);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [email, setEmail] = useState("");
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    auth.onAuthStateChanged((authUser) => {
+    const unsubscribe = auth.onAuthStateChanged((authUser) => {
       if (authUser) {
         //logged in...
         console.log(authUser);
         setUser(authUser);
-
-        if (authUser.displayName) {
-          //dont update username
-        } else {
-          //if we just created one
-          return authUser.updateProfile({
-            displayName: username,
-          });
-        }
       } else {
         //logged out
         setUser(null);
       }
     });
+
+    return () => {
+      unsubscribe();
+    };
   }, [user, username]);
 
   useEffect(() => {
@@ -78,7 +74,22 @@ function App() {
 
     auth
       .createUserWithEmailAndPassword(email, password)
+      .then((authUser) => {
+        return authUser.user.updateProfile({
+          displayName: username,
+        });
+      })
       .catch((error) => alert(error.message));
+    setOpen(false);
+  };
+
+  const signIn = (event) => {
+    event.preventDefault();
+
+    auth
+      .signInWithEmailAndPassword(email, password)
+      .catch((error) => alert(error.message));
+    setOpenSignIn(false);
   };
 
   return (
@@ -107,12 +118,44 @@ function App() {
             />
             <Input
               placeholder="password"
-              type="text"
+              type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
+
             <Button type="submit" onClick={signUp}>
               Sign Up
+            </Button>
+          </form>
+        </div>
+      </Modal>
+
+      <Modal open={openSignIn} onClose={() => setOpenSignIn(false)}>
+        <div style={modalStyle} className={classes.paper}>
+          <form className="app__signUp">
+            <center>
+              <img
+                className="app__headerImage"
+                src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/Instagram_logo.svg/1200px-Instagram_logo.svg.png"
+                alt="insta logo"
+              />
+            </center>
+
+            <Input
+              placeholder="email"
+              type="text"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+            <Input
+              placeholder="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+
+            <Button type="submit" onClick={signIn}>
+              Sign In
             </Button>
           </form>
         </div>
@@ -127,7 +170,15 @@ function App() {
         />
       </div>
 
-      <Button onClick={() => setOpen(true)}>Sign up</Button>
+      {/*Authentication/ signout */}
+      {user ? (
+        <Button onClick={() => auth.signOut()}>Log Out</Button>
+      ) : (
+        <div className="app__loginContainer">
+          <Button onClick={() => setOpenSignIn(true)}>Sign In</Button>
+          <Button onClick={() => setOpen(true)}>Sign up</Button>
+        </div>
+      )}
 
       <h1> HEYO</h1>
 
