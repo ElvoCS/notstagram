@@ -95,12 +95,6 @@ function App() {
 
   return (
     <div className="App">
-      {user?.displayName ? (
-        <ImageUpload username={user.displayName} />
-      ) : (
-        <h3>Log in to upload</h3>
-      )}
-
       <Modal open={open} onClose={() => setOpen(false)}>
         <div style={modalStyle} className={classes.paper}>
           <form className="app__signUp">
@@ -175,19 +169,18 @@ function App() {
           src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/Instagram_logo.svg/1200px-Instagram_logo.svg.png"
           alt="insta logo"
         />
-      </div>
-
-      {/*Authentication/ signout */}
-      {user ? (
-        <Button onClick={() => auth.signOut()}>Log Out</Button>
-      ) : (
-        <div className="app__loginContainer">
-          <Button onClick={() => setOpenSignIn(true)}>Sign In</Button>
-          <Button onClick={() => setOpen(true)}>Sign up</Button>
+        {/*Authentication/ signout */}
+        <div className="appheader__buttons">
+          {user ? (
+            <Button onClick={() => auth.signOut()}>Log Out</Button>
+          ) : (
+            <div className="app__loginContainer">
+              <Button onClick={() => setOpenSignIn(true)}>Sign In</Button>
+              <Button onClick={() => setOpen(true)}>Sign up</Button>
+            </div>
+          )}
         </div>
-      )}
-
-      <h1> HEYO</h1>
+      </div>
 
       {posts.map(({ id, post }) => (
         <Post
@@ -197,6 +190,11 @@ function App() {
           imageUrl={post.imageUrl}
         />
       ))}
+      {user?.displayName ? (
+        <ImageUpload username={user.displayName} />
+      ) : (
+        <h3>Log in to upload</h3>
+      )}
     </div>
   );
 }
